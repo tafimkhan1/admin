@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ঢাকা ফুড হাউজ – Admin Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: { extend: {
+      fontFamily: { sans: ['Inter', 'Hind Siliguri', 'sans-serif'], bn: ['Hind Siliguri', 'Inter', 'sans-serif'] },
+      colors: { brand: { DEFAULT: '#EA580C', dark: '#C2410C', soft: '#FFEDD5' }, ink: { bg: '#0F172A', card: '#1E293B' } }
+    } }
+  };
+</script>
+<style>
+  body { font-family: 'Inter', 'Hind Siliguri', sans-serif; transition: background-color .3s, color .3s; }
+  .card { transition: background-color .3s, border-color .3s; }
+  .bn { font-family: 'Hind Siliguri', 'Inter', sans-serif; }
+  .sidebar { transition: transform .3s ease; }
+  .nav-link { display:flex; align-items:center; gap:.75rem; padding:.7rem 1rem; border-radius:.75rem; font-weight:500; color:#64748b; transition:all .2s; }
+  .nav-link:hover { background:#FFEDD5; color:#C2410C; }
+  .dark .nav-link { color:#94a3b8; }
+  .dark .nav-link:hover { background:rgba(234,88,12,.15); color:#fb923c; }
+  .nav-link.active { background:#EA580C; color:#fff; box-shadow:0 6px 16px -6px rgba(234,88,12,.6); }
+  .nav-link.active:hover { background:#EA580C; color:#fff; }
+  .scroll-thin::-webkit-scrollbar { height:6px; }
+  .scroll-thin::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:99px; }
+  .dark .scroll-thin::-webkit-scrollbar-thumb { background:#475569; }
+  :focus-visible { outline:2px solid #EA580C; outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+</style>
+</head>
+<body class="bg-[#F3F4F6] text-slate-800 dark:bg-ink-bg dark:text-slate-100">
+
+<!-- Mobile overlay -->
+<div id="overlay" class="fixed inset-0 z-30 hidden bg-black/50 lg:hidden"></div>
+
+<!-- Sidebar -->
+<aside id="sidebar" class="sidebar card fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col border-r border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-ink-card lg:translate-x-0">
+  <div class="flex items-center justify-between">
+    <a href="#" class="flex items-center gap-3">
+      <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand text-white"><i data-lucide="chef-hat" class="h-6 w-6"></i></span>
+      <span class="leading-tight">
+        <span class="bn block text-lg font-bold">ঢাকা ফুড হাউজ</span>
+        <span class="block text-xs text-slate-500 dark:text-slate-400">Dhaka Food House</span>
+      </span>
+    </a>
+    <button id="closeSidebar" class="rounded-lg p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 lg:hidden" aria-label="Close menu"><i data-lucide="x" class="h-5 w-5"></i></button>
+  </div>
+
+  <nav class="mt-8 flex flex-1 flex-col gap-1.5" aria-label="Main">
+    <a href="#" class="nav-link active"><i data-lucide="layout-dashboard" class="h-5 w-5"></i>Dashboard</a>
+    <a href="#" class="nav-link"><i data-lucide="shopping-bag" class="h-5 w-5"></i>Orders<span class="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">9</span></a>
+    <a href="#" class="nav-link"><i data-lucide="utensils-crossed" class="h-5 w-5"></i>Menu / Products</a>
+    <a href="#" class="nav-link"><i data-lucide="users" class="h-5 w-5"></i>Customers</a>
+    <a href="#" class="nav-link"><i data-lucide="settings" class="h-5 w-5"></i>Settings</a>
+  </nav>
+
+  <div class="rounded-2xl bg-brand-soft p-4 text-sm dark:bg-brand/15">
+    <p class="bn font-semibold text-brand-dark dark:text-orange-300">আজকের রান্নাঘর সচল</p>
+    <p class="mt-1 text-xs text-slate-600 dark:text-slate-300">৩ জন শেফ ও ৫ জন ডেলিভারি ম্যান অনলাইন আছেন।</p>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="lg:pl-64">
+  <!-- Top bar -->
+  <header class="card sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur dark:border-slate-700 dark:bg-ink-card/90 sm:px-8">
+    <button id="openSidebar" class="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-700 lg:hidden" aria-label="Open menu">
+      <i data-lucide="menu" class="h-6 w-6"></i>
+    </button>
+
+    <div class="relative max-w-md flex-1">
+      <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
+      <input type="search" placeholder="Search order ID, dish, customer..." class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm placeholder-slate-400 focus:border-brand focus:outline-none dark:border-slate-600 dark:bg-ink-bg dark:placeholder-slate-500">
+    </div>
+
+    <div class="ml-auto flex items-center gap-1.5 sm:gap-3">
+      <button id="themeToggle" class="rounded-xl p-2.5 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="Toggle dark mode">
+        <i data-lucide="moon" class="h-5 w-5 dark:hidden"></i>
+        <i data-lucide="sun" class="hidden h-5 w-5 dark:block"></i>
+      </button>
+      <button class="relative rounded-xl p-2.5 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="Notifications">
+        <i data-lucide="bell" class="h-5 w-5"></i>
+        <span class="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-white dark:ring-ink-card">3</span>
+      </button>
+      <div class="flex items-center gap-3 border-l border-slate-200 pl-3 dark:border-slate-700">
+        <img class="h-10 w-10 rounded-full object-cover ring-2 ring-brand/30" alt="তাফিম খান"
+             src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23EA580C'/><circle cx='32' cy='25' r='11' fill='%23FED7AA'/><path d='M10 64c2-16 14-22 22-22s20 6 22 22z' fill='%23FED7AA'/></svg>">
+        <div class="hidden text-left leading-tight sm:block">
+          <p class="bn text-sm font-semibold">তাফিম খান</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Owner</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="space-y-8 p-4 sm:p-8">
+    <div>
+      <h1 class="bn text-2xl font-bold sm:text-3xl">স্বাগতম, তাফিম ভাই 👋</h1>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Dashboard overview · <span class="bn">২৬ নভেম্বর ২০২৬, বৃহস্পতিবার</span></p>
+    </div>
+
+    <!-- Stats -->
+    <section class="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+      <article class="card rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-ink-card">
+        <div class="flex items-center justify-between">
+          <p class="bn text-sm font-medium text-slate-500 dark:text-slate-400">আজকের বিক্রি <span class="text-xs">(Today's Sales)</span></p>
+          <span class="rounded-xl bg-orange-100 p-2.5 text-brand dark:bg-brand/20"><i data-lucide="banknote" class="h-5 w-5"></i></span>
+        </div>
+        <p class="bn mt-4 text-3xl font-bold tracking-tight">৳ ৪৮,৫৫০</p>
+        <p class="bn mt-2 flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400"><i data-lucide="trending-up" class="h-4 w-4"></i>+১২.৫% <span class="font-normal text-slate-500 dark:text-slate-400">গতকালের চেয়ে</span></p>
+      </article>
+
+      <article class="card rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-ink-card">
+        <div class="flex items-center justify-between">
+          <p class="bn text-sm font-medium text-slate-500 dark:text-slate-400">মোট অর্ডার <span class="text-xs">(Total Orders)</span></p>
+          <span class="rounded-xl bg-blue-100 p-2.5 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300"><i data-lucide="shopping-bag" class="h-5 w-5"></i></span>
+        </div>
+        <p class="bn mt-4 text-3xl font-bold tracking-tight">১৪২ টি</p>
+        <p class="bn mt-2 flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400"><i data-lucide="trending-up" class="h-4 w-4"></i>+৮.২% <span class="font-normal text-slate-500 dark:text-slate-400">গতকালের চেয়ে</span></p>
+      </article>
+
+      <article class="card rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-ink-card">
+        <div class="flex items-center justify-between">
+          <p class="bn text-sm font-medium text-slate-500 dark:text-slate-400">নতুন কাস্টমার <span class="text-xs">(New Customers)</span></p>
+          <span class="rounded-xl bg-emerald-100 p-2.5 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300"><i data-lucide="user-plus" class="h-5 w-5"></i></span>
+        </div>
+        <p class="bn mt-4 text-3xl font-bold tracking-tight">২৮ জন</p>
+        <p class="bn mt-2 flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400"><i data-lucide="trending-up" class="h-4 w-4"></i>+১৫% <span class="font-normal text-slate-500 dark:text-slate-400">এই সপ্তাহে</span></p>
+      </article>
+
+      <article class="card rounded-2xl border-2 border-amber-300 bg-white p-6 shadow-sm dark:border-amber-500/60 dark:bg-ink-card">
+        <div class="flex items-center justify-between">
+          <p class="bn text-sm font-medium text-slate-500 dark:text-slate-400">পেন্ডিং অর্ডার <span class="text-xs">(Pending)</span></p>
+          <span class="rounded-xl bg-amber-100 p-2.5 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300"><i data-lucide="clock" class="h-5 w-5"></i></span>
+        </div>
+        <p class="bn mt-4 text-3xl font-bold tracking-tight">০৯ টি</p>
+        <p class="bn mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300"><i data-lucide="triangle-alert" class="h-3.5 w-3.5"></i>দ্রুত ব্যবস্থা নিন</p>
+      </article>
+    </section>
+
+    <!-- Chart + side cards -->
+    <section class="grid gap-6 xl:grid-cols-3">
+      <article class="card rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-ink-card xl:col-span-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="bn text-lg font-semibold">সাপ্তাহিক বিক্রির হিসাব <span class="text-sm font-normal text-slate-500 dark:text-slate-400">(Weekly Sales - ৳)</span></h2>
+          <span class="bn rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-brand-dark dark:bg-brand/20 dark:text-orange-300">শনি – শুক্র</span>
+        </div>
+        <div class="relative mt-6 h-72"><canvas id="salesChart"></canvas></div>
+      </article>
+
+      <article class="card rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-ink-card">
+        <h2 class="bn text-lg font-semibold">সেরা বিক্রিত খাবার <span class="text-sm font-normal text-slate-500 dark:text-slate-400">(Top Dishes)</span></h2>
+        <ul class="mt-5 divide-y divide-slate-100 dark:divide-slate-700">
+          <li class="flex items-center gap-3 py-3.5"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-xl dark:bg-brand/20">🍛</span><div class="min-w-0 flex-1"><p class="bn truncate font-medium">কাচ্চি বিরিয়ানি (হাফ)</p><p class="bn text-xs text-slate-500 dark:text-slate-400">৮৪ বার অর্ডার</p></div><p class="bn font-semibold">৳ ২৮০</p></li>
+          <li class="flex items-center gap-3 py-3.5"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-xl dark:bg-brand/20">🍗</span><div class="min-w-0 flex-1"><p class="bn truncate font-medium">চিকেন গ্রিল ও নান</p><p class="bn text-xs text-slate-500 dark:text-slate-400">৬৭ বার অর্ডার</p></div><p class="bn font-semibold">৳ ২২০</p></li>
+          <li class="flex items-center gap-3 py-3.5"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-xl dark:bg-brand/20">🥘</span><div class="min-w-0 flex-1"><p class="bn truncate font-medium">বিফ ভুনা খিচুড়ি</p><p class="bn text-xs text-slate-500 dark:text-slate-400">৫৩ বার অর্ডার</p></div><p class="bn font-semibold">৳ ২৫০</p></li>
+          <li class="flex items-center gap-3 py-3.5"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-xl dark:bg-brand/20">🥛</span><div class="min-w-0 flex-1"><p class="bn truncate font-medium">বোরহানি (১ গ্লাস)</p><p class="bn text-xs text-slate-500 dark:text-slate-400">৯১ বার অর্ডার</p></div><p class="bn font-semibold">৳ ৮০</p></li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="grid gap-6 xl:grid-cols-3">
+      <article class="card rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-ink-card">
+        <h2 class="bn text-lg font-semibold">রান্নাঘরের সতর্কতা <span class="text-sm font-normal text-slate-500 dark:text-slate-400">(Low Stock)</span></h2>
+        <ul class="mt-5 space-y-3">
+          <li class="flex items-center justify-between gap-3 rounded-xl bg-red-50 p-3.5 dark:bg-red-500/10"><div class="flex items-center gap-3"><i data-lucide="wheat" class="h-5 w-5 text-red-500"></i><span class="bn text-sm font-medium">বাসমতি চাল – মাত্র ৫ কেজি বাকি</span></div><span class="bn shrink-0 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700 dark:bg-red-500/20 dark:text-red-300">জরুরি</span></li>
+          <li class="flex items-center justify-between gap-3 rounded-xl bg-red-50 p-3.5 dark:bg-red-500/10"><div class="flex items-center gap-3"><i data-lucide="beef" class="h-5 w-5 text-red-500"></i><span class="bn text-sm font-medium">খাসির মাংস – ৩ কেজি বাকি</span></div><span class="bn shrink-0 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700 dark:bg-red-500/20 dark:text-red-300">জরুরি</span></li>
+          <li class="flex items-center justify-between gap-3 rounded-xl bg-amber-50 p-3.5 dark:bg-amber-500/10"><div class="flex items-center gap-3"><i data-lucide="flower-2" class="h-5 w-5 text-amber-500"></i><span class="bn text-sm font-medium">জাফরান – লো স্টক</span></div><span class="bn shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">কম</span></li>
+        </ul>
+        <button class="bn mt-5 w-full rounded-xl bg-brand py-2.5 text-sm font-semibold text-white transition hover:bg-brand-dark">সরবরাহকারীকে অর্ডার দিন</button>
+      </article>
+
+      <!-- Orders table -->
+      <article class="card rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-ink-card xl:col-span-2">
+        <div class="flex items-center justify-between">
+          <h2 class="bn text-lg font-semibold">সাম্প্রতিক অর্ডার <span class="text-sm font-normal text-slate-500 dark:text-slate-400">(Recent Orders)</span></h2>
+          <a href="#" class="text-sm font-semibold text-brand hover:underline">View all</a>
+        </div>
+        <div class="scroll-thin mt-5 overflow-x-auto">
+          <table class="w-full min-w-[820px] text-left text-sm">
+            <thead>
+              <tr class="border-b border-slate-100 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                <th class="py-3 pr-4 font-semibold">Order ID</th>
+                <th class="py-3 pr-4 font-semibold">Customer Name</th>
+                <th class="py-3 pr-4 font-semibold">Ordered Items</th>
+                <th class="py-3 pr-4 font-semibold">Amount (৳)</th>
+                <th class="py-3 pr-4 font-semibold">Date &amp; Time</th>
+                <th class="py-3 font-semibold">Status</th>
+              </tr>
+            </thead>
+            <tbody id="ordersBody" class="bn divide-y divide-slate-100 dark:divide-slate-700"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <footer class="bn pb-2 text-center text-xs text-slate-400">© ২০২৬ ঢাকা ফুড হাউজ · সর্বস্বত্ব সংরক্ষিত</footer>
+  </main>
+</div>
+
+<script>
+  // ---------- Icons ----------
+  const renderIcons = () => lucide.createIcons();
+
+  // ---------- Orders data ----------
+  const badge = {
+    delivered: ['ডেলিভারি হয়েছে', 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'],
+    pending:   ['পেন্ডিং', 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300'],
+    cancelled: ['বাতিল', 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300']
+  };
+  const orders = [
+    ['#DFH-১০৪২', 'রাফি উল ইসলাম', '২x কাচ্চি বিরিয়ানি, ২x বোরহানি', '৳ ৭২০', '২৬ নভেম্বর ২০২৬, ০২:১৫ PM', 'delivered'],
+    ['#DFH-১০৪১', 'সাদিয়া রহমান', '১x চিকেন গ্রিল ও নান, ১x বোরহানি', '৳ ৩০০', '২৬ নভেম্বর ২০২৬, ০২:০২ PM', 'pending'],
+    ['#DFH-১০৪০', 'মাহমুদুল হাসান', '৩x বিফ ভুনা খিচুড়ি', '৳ ৭৫০', '২৬ নভেম্বর ২০২৬, ০১:৪৮ PM', 'delivered'],
+    ['#DFH-১০৩৯', 'ফারজানা আক্তার', '১x কাচ্চি বিরিয়ানি (ফুল), ১x ফিরনি', '৳ ৬২০', '২৬ নভেম্বর ২০২৬, ০১:৩০ PM', 'pending'],
+    ['#DFH-১০৩৮', 'আরিফুর রহমান', '২x মুরগির রোস্ট, ২x পরোটা', '৳ ৪৮০', '২৬ নভেম্বর ২০২৬, ১২:৫৫ PM', 'cancelled'],
+    ['#DFH-১০৩৭', 'নুসরাত জাহান', '১x তেহারি, ২x বোরহানি', '৳ ৩৮০', '২৬ নভেম্বর ২০২৬, ১২:৪০ PM', 'delivered'],
+    ['#DFH-১০৩৬', 'তাহমিদ হোসেন', '৪x কাচ্চি বিরিয়ানি (হাফ), ১x জর্দা', '৳ ১,২৪০', '২৬ নভেম্বর ২০২৬, ১২:১০ PM', 'delivered']
+  ];
+  document.getElementById('ordersBody').innerHTML = orders.map(o => `
+    <tr class="transition hover:bg-slate-50 dark:hover:bg-slate-800/60">
+      <td class="py-4 pr-4 font-semibold text-brand">${o[0]}</td>
+      <td class="py-4 pr-4 font-medium">${o[1]}</td>
+      <td class="py-4 pr-4 text-slate-600 dark:text-slate-300">${o[2]}</td>
+      <td class="py-4 pr-4 font-semibold">${o[3]}</td>
+      <td class="py-4 pr-4 text-slate-500 dark:text-slate-400">${o[4]}</td>
+      <td class="py-4"><span class="inline-block whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${badge[o[5]][1]}">${badge[o[5]][0]}</span></td>
+    </tr>`).join('');
+
+  // ---------- Sidebar ----------
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  const toggleSidebar = open => {
+    sidebar.classList.toggle('-translate-x-full', !open);
+    overlay.classList.toggle('hidden', !open);
+  };
+  document.getElementById('openSidebar').onclick = () => toggleSidebar(true);
+  document.getElementById('closeSidebar').onclick = () => toggleSidebar(false);
+  overlay.onclick = () => toggleSidebar(false);
+  window.addEventListener('resize', () => { if (innerWidth >= 1024) toggleSidebar(false); });
+
+  // ---------- Chart ----------
+  const days = ['শনিবার', 'রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার'];
+  const sales = [42500, 38200, 35000, 40800, 46300, 48550, 64800];
+  const toBn = n => n.toLocaleString('bn-BD');
+  let chart;
+  function buildChart() {
+    const dark = document.documentElement.classList.contains('dark');
+    const grid = dark ? 'rgba(148,163,184,.15)' : 'rgba(148,163,184,.25)';
+    const text = dark ? '#94a3b8' : '#64748b';
+    if (chart) chart.destroy();
+    chart = new Chart(document.getElementById('salesChart'), {
+      type: 'bar',
+      data: { labels: days, datasets: [{
+        label: 'বিক্রি (৳)', data: sales, borderRadius: 10, maxBarThickness: 46,
+        backgroundColor: sales.map((_, i) => i === 6 ? '#EA580C' : (dark ? 'rgba(234,88,12,.45)' : 'rgba(234,88,12,.35)')),
+        hoverBackgroundColor: '#EA580C'
+      }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => ' ৳ ' + toBn(c.parsed.y) }, titleFont: { family: 'Hind Siliguri' }, bodyFont: { family: 'Hind Siliguri' } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: text, font: { family: 'Hind Siliguri' } } },
+          y: { beginAtZero: true, suggestedMax: 70000, grid: { color: grid }, border: { display: false },
+               ticks: { color: text, callback: v => '৳ ' + toBn(v / 1000) + 'k', font: { family: 'Hind Siliguri' } } }
+        }
+      }
+    });
+  }
+
+  // ---------- Dark mode ----------
+  const root = document.documentElement;
+  try { if (localStorage.getItem('dfh-theme') === 'dark') root.classList.add('dark'); } catch (e) {}
+  document.getElementById('themeToggle').onclick = () => {
+    root.classList.toggle('dark');
+    try { localStorage.setItem('dfh-theme', root.classList.contains('dark') ? 'dark' : 'light'); } catch (e) {}
+    buildChart();
+  };
+
+  renderIcons();
+  buildChart();
+</script>
+</body>
+</html>
